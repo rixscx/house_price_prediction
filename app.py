@@ -38,7 +38,7 @@ st.write("Fill in the details below to get a house price prediction.")
 st.sidebar.header("Input Features")
 input_data = {}
 for col in columns:
-    if col.lower() != "target":  # Exclude target column if present
+    if col.lower() not in ["target", "medhousevalue"]:  # Exclude target column if present
         input_data[col] = st.sidebar.number_input(f"Enter {col}", value=0.0, step=0.01, format="%.2f")
 
 # Convert input to DataFrame
@@ -47,18 +47,24 @@ input_df = pd.DataFrame([input_data])
 # Ensure input columns match model's expected features
 if model:
     expected_features = model.get_booster().feature_names
-    if set(expected_features) == set(input_df.columns):
+    missing_features = [feat for feat in expected_features if feat not in input_df.columns]
+    
+    if missing_features:
+        st.error(f"Missing required features: {missing_features}")
+    else:
+        # Select only the features expected by the model
+        input_df = input_df[expected_features]
+
         # Prediction button
         if st.button("📊 Predict Price"):
             try:
-                prediction = model.predict(input_df[expected_features])
+                prediction = model.predict(input_df)
                 st.success(f"🏠 Estimated House Price: **${prediction[0]:,.2f}**")
             except ValueError as e:
-                st.error(f"Feature mismatch: {e}")
-                st.write("Check if feature names match the dataset used during training.")
-    else:
-        st.error("Feature mismatch! Ensure that input fields match the model's expected features.")
-        st.write("Expected Features:", expected_features)
-        st.write("Provided Features:", input_df.columns.tolist())
+                st.error(f"Prediction error: {e}")
 else:
     st.error("Model could not be loaded. Please check the model file.")
+
+# Footer
+st.markdown("---")
+st.markdown("🔹 Developed with ❤️ using Streamlit")
