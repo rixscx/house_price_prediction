@@ -22,7 +22,7 @@ Make sure you have **Python 3.8+** installed on your system.
 
 ### 📥 Clone the Repository
 ```sh
-git clone https://github.com/your-username/house_price_prediction.git
+git clone https://github.com/rixscx/house_price_prediction.git
 cd house_price_prediction
 ```
 
