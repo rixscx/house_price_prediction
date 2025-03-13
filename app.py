@@ -15,6 +15,7 @@ except RuntimeError:
 model_path = "house_price_model.pkl"
 if not os.path.exists(model_path):
     st.error("Model file not found! Please upload the model file.")
+    model = None
 else:
     with open(model_path, "rb") as file:
         model = pickle.load(file)
@@ -23,6 +24,7 @@ else:
 csv_path = "california_housing.csv"
 if not os.path.exists(csv_path):
     st.error("Dataset file not found! Please upload the dataset file.")
+    columns = []
 else:
     columns = pd.read_csv(csv_path, nrows=1).columns.tolist()
 
@@ -42,10 +44,21 @@ for col in columns:
 # Convert input to DataFrame
 input_df = pd.DataFrame([input_data])
 
-# Prediction button
-if st.button("📊 Predict Price"):
-    if model:
-        prediction = model.predict(input_df)
-        st.success(f"🏠 Estimated House Price: **${prediction[0]:,.2f}**")
+# Ensure input columns match model's expected features
+if model:
+    expected_features = model.get_booster().feature_names
+    if set(expected_features) == set(input_df.columns):
+        # Prediction button
+        if st.button("📊 Predict Price"):
+            try:
+                prediction = model.predict(input_df[expected_features])
+                st.success(f"🏠 Estimated House Price: **${prediction[0]:,.2f}**")
+            except ValueError as e:
+                st.error(f"Feature mismatch: {e}")
+                st.write("Check if feature names match the dataset used during training.")
     else:
-        st.error("Model could not be loaded. Please check the model file.")
+        st.error("Feature mismatch! Ensure that input fields match the model's expected features.")
+        st.write("Expected Features:", expected_features)
+        st.write("Provided Features:", input_df.columns.tolist())
+else:
+    st.error("Model could not be loaded. Please check the model file.")
